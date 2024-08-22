@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div style="background: #4AC29A;  /* fallback for old browsers */
+background: -webkit-linear-gradient(to right, #BDFFF3, #4AC29A);  /* Chrome 10-25, Safari 5.1-6 */
+background: linear-gradient(to right, #BDFFF3, #4AC29A); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+border: 1px solid #e0e0e0; padding: 20px; border-radius: 10px;">
+        <h2 style="margin-top: 0;">{{ bus.bus_name }} - {{ bus.bus_type }}</h2>
+
+        <!-- From and To -->
+        <div style="padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+            <p style="margin: 0; display: flex; justify-content: space-between;">
+                <span><strong>From:</strong> {{ bus.source.place_name }}</span>
+                <span><strong>To:</strong> {{ bus.destination.place_name }}</span>
+            </p>
+        </div>
+
+        <!-- Departure and Arrival -->
+        <div style="padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+            <p style="margin: 0; display: flex; justify-content: space-between;">
+                <span><strong>Departure:</strong> {{ bus.starting_time|date:"SHORT_DATETIME_FORMAT" }}</span>
+                <span><strong>Arrival:</strong> {{ bus.arrival_time|date:"SHORT_DATETIME_FORMAT" }}</span>
+            </p>
+        </div>
+
+        <!-- Operator and Contact -->
+        <div style="padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+            <p style="margin: 0; display: flex; justify-content: space-between;">
+                <span>
+                    <strong>Operator:</strong> {{ bus.bus_Operator.operator_name }}<br>
+                    <strong>Contact:</strong> {{ bus.bus_Operator.operator_contact }}
+                </span>
+                <span style="text-align: right;">
+                    <p style="margin: 0;"><strong>Average Rating:</strong> {{ average_rating }}</p>
+                    <p style="margin: 0;"><strong>Fare:</strong> ₹{{ bus.fare }}</p>
+                </span>
+            </p>
+        </div>
+
+        <!-- Cancellation Policy -->
+        <div style="padding: 10px 0; border-bottom: 1px solid #e0e0e0;">
+            <p style="margin: 0;"><strong>Cancellation Policy:</strong> {{ bus.cancel_policy }}</p>
+        </div>
+
+        <!-- Book Now button -->
+        <form method="post" action="{% url 'book_bus' bus.bus_id %}" style="text-align: right;">
+            {% csrf_token %}
+            <p style="margin: 0; display: flex; align-items: center; justify-content: flex-end;">
+                <strong style="margin-right: 10px;">Number of seats:</strong>
+                <input name="seats" value="1" class="form-control d-inline-block" style="width: auto; margin-right: 10px;">
+                <button type="submit" class="btn btn-primary">Book Now</button>
+            </p>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('bookingForm').onsubmit = function (e) {
+        e.preventDefault();
+        var form = this;
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest' 
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);  
+            if (data.success) {
+                window.location.href = "{% url 'home' %}";  
+            }
+        })
+        .catch(error => {
+            alert('Error occurred');
+        });
+    };
+</script>
+{% endblock %}

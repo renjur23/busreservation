@@ -1,0 +1,74 @@
+/* body {
+    font-family: Arial, sans-serif;
+    max-width: 100%;
+    height: auto;
+}
+
+.navbar-brand .logo-img {
+    height: 50px;
+}
+
+.top {
+    background-image: url('../images/three.png');
+    background-size: cover;
+    background-position: center;
+    color: black;
+    padding: 100px 0;
+}
+.top h1{
+    color:white;
+    text-align: center;
+}
+
+.overlay {
+    background-color: transparent;
+    padding:150px;
+    border-radius: 10px;
+}
+
+.search-box {
+    background: rgba(255, 255, 255, 0.8);
+    position: relative;
+    left:180px;
+    width:1200px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-box .form-label {
+    font-weight: bold;
+}
+
+.search-box .input-group .btn-outline-danger {
+    border-color: #dc3545;
+}
+
+.search-box .input-group .btn-outline-secondary {
+    border-color: #6c757d;
+}
+
+.search-box .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.footer {
+    position: relative;
+    top:500px;
+    padding: 20px 0;
+}
+
+.footer .social-icons a {
+    color: white;
+    margin: 0 10px;
+}
+
+.footer .footer-links a {
+    color: white;
+    margin: 0 10px;
+}
+
+.footer p {
+    margin: 0;
+} */

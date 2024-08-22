@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">Payment Page</h2> 
+
+    
+    <div class="payment-block border p-4 mt-4" style="background: #E0EAFC;  /* fallback for old browsers */
+background: -webkit-linear-gradient(to right, #CFDEF3, #E0EAFC);  /* Chrome 10-25, Safari 5.1-6 */
+background: linear-gradient(to right, #CFDEF3, #E0EAFC); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+border-width: 2px; border-style: solid; border-radius: 10px; max-width: 400px; margin: 0 auto;">
+
+        <p><strong>Total Fare:</strong> ₹{{ total_fare }}</p>
+
+        <form action="{% url 'process_payment' %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="amount" value="{{ total_fare }}">
+            
+            <div class="form-group" style="max-width: 300px;">
+                <label for="payment_method"><strong>Payment Method:</strong></label>
+                <select name="payment_method" id="payment_method" class="form-control" style="width: 100%; appearance: auto; -webkit-appearance: auto; -moz-appearance: auto;">
+                    <option value="G-pay">G-Pay</option>
+                    <option value="Phonepe">PhonePe</option>
+                    <option value="credit_card">Credit Card</option>
+                    <option value="paypal">PayPal</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3">Make Payment</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

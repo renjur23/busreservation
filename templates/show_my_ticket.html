@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Your Tickets</h2>
+    {% if bookings %}
+    {% for booking in bookings %}
+    <div class="ticket border p-3 mb-4" style="background: #2980B9;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #FFFFFF, #6DD5FA, #2980B9);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #FFFFFF, #6DD5FA, #2980B9); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+    ; border-radius:10px; border-style: solid;">
+        <h3>Booking ID: {{ booking.booking_id }}</h3>
+        <p><strong>Bus Name:</strong> {{ booking.bus.bus_name }} ({{ booking.bus.bus_type }})</p>
+
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>From:</strong> {{ booking.bus.source.place_name }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>To:</strong> {{ booking.bus.destination.place_name }}</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Departure:</strong> {{ booking.starting_time|date:"SHORT_DATETIME_FORMAT" }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Arrival:</strong> {{ booking.arrival_time|date:"SHORT_DATETIME_FORMAT" }}</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Seats Booked:</strong> {{ booking.seats }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Booking Date:</strong> {{ booking.booking_date|date:"SHORT_DATE_FORMAT" }}</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Operator:</strong> {{ booking.bus.bus_Operator.operator_name }}</p>
+                <p><strong>Contact:</strong> {{ booking.bus.bus_Operator.operator_contact }}</p>
+            </div>
+            <div class="col-md-6 text-right">
+                <p><strong>Fare:</strong> ₹{{ booking.bus.fare }}</p>
+            </div>
+        </div>
+
+        <p><strong>Cancellation Policy:</strong> {{ booking.bus.cancel_policy }}</p>
+
+        {% if booking.arrival_time < now %}
+        <div class="rating-review-section" id="rating-review-section-{{ booking.booking_id }}">
+            {% if booking.rating and booking.review %}
+            <!-- Display existing rating and review -->
+            <div class="existing-rating">
+                <p><strong>Your Rating:</strong> {{ booking.rating }} / 5</p>
+                <p><strong>Your Review:</strong> {{ booking.review }}</p>
+            </div>
+            {% else %}
+            <!-- Rating form -->
+            <form action="{% url 'add_rating' booking.booking_id %}" method="post" class="rating-form">
+                {% csrf_token %}
+                
+                <!-- Star Rating Input -->
+                <div class="star-rating mb-3">
+                    {% for value in "12345" %}
+                    <input type="radio" id="star{{ value }}-{{ booking.booking_id }}" name="rating_value" value="{{ value }}" class="d-none">
+                    <label for="star{{ value }}-{{ booking.booking_id }}" class="star">&#9733;</label>
+                    {% endfor %}
+                </div>
+                
+                <!-- Review Textarea -->
+                <div class="mb-3">
+                    <textarea name="review" placeholder="Enter your review" class="form-control"></textarea>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="text-right">
+                    <button type="submit" class="btn btn-success">Submit</button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if booking.starting_time > now %}
+        <form action="{% url 'cancel_booking' booking.booking_id %}" method="post" onsubmit="return confirmCancellation();">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Cancel Booking</button>
+        </form>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>You have no bookings.</p>
+    {% endif %}
+</div>
+
+<script>
+    function confirmCancellation() {
+        return confirm('Are you sure you want to cancel this booking?');
+    }
+
+    // JavaScript to handle star rating selection
+    document.querySelectorAll('.star-rating .star').forEach(star => {
+        star.addEventListener('click', function() {
+            let prevStars = this.previousElementSibling;
+            while (prevStars) {
+                prevStars.classList.add('checked');
+                prevStars = prevStars.previousElementSibling;
+            }
+            this.classList.add('checked');
+            let nextStars = this.nextElementSibling;
+            while (nextStars) {
+                nextStars.classList.remove('checked');
+                nextStars = nextStars.nextElementSibling;
+            }
+        });
+    });
+document.querySelectorAll('.rating-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+
+        const formData = new FormData(this);
+        const bookingId = this.action.split('/').pop();
+        const section = document.getElementById(`rating-review-section-${bookingId}`);
+
+        console.log('formData>>> ', formData)
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest' // Mark the request as an AJAX request
+            }
+        })
+        {% comment %} .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Create new elements for the rating and review
+                const ratingElement = document.createElement('p');
+                ratingElement.innerHTML = `<strong>Your Rating:</strong> ${data.rating_value} / 5`;
+
+                const reviewElement = document.createElement('p');
+                reviewElement.innerHTML = `<strong>Your Review:</strong> ${data.review}`;
+
+                // Append to the section and hide the form
+                section.innerHTML = ''; // Clear the existing content
+                section.appendChild(ratingElement);
+                section.appendChild(reviewElement);
+            } else {
+                alert('Failed to submit your rating.');
+            }
+        })
+        .catch(error => {
+            console.log('Error:', error);
+            alert('An error occurred while submitting your rating.');
+        }); {% endcomment %}
+    });
+});
+
+</script>
+
+<style>
+    .star-rating {
+        direction: ltr;
+        font-size: 2em;
+    }
+
+    .star-rating .star {
+        display: inline-block;
+        color: #ccc;
+        cursor: pointer;
+    }
+
+    .star-rating .star:hover,
+    .star-rating .star.checked {
+        color: gold;
+    }
+
+    .rating-form {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .rating-form .form-control {
+        width: 100%;
+        resize: none;
+    }
+</style>
+{% endblock %}

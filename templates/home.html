@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% if request.session.payment_success %}
+<script>
+    alert('Successfully booked!');
+</script>
+{% endif %}
+<div id="bannerCarousel" class="carousel slide" data-bs-ride="carousel">
+    <div class="carousel-inner" id="carouselItems"></div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+
+    <div class="carousel-overlay">
+        <h1>India's No. 1 Online Bus Ticket Booking Site</h1>
+        <p>Get 10% Off, Up to ₹500, on Your First Registration</p>
+    </div>
+</div>
+
+<div class="container mt-5" style="background-color: #FEE140;
+background-image: linear-gradient(90deg, #FEE140 0%, #FA709A 100%);
+border-radius:10px;">
+    <form id="journeyForm" method="GET" action="javascript:void(0);" onsubmit="searchBuses()">
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="from" class="form-label">From</label>
+                <select id="from" name="from" class="form-select" required>
+                    <option value="" selected disabled>Choose a departure</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="to" class="form-label">To</label>
+                <select id="to" name="to" class="form-select" required>
+                    <option value="" selected disabled>Choose a destination</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="journey_date" class="form-label">Journey Date</label>
+                <input type="date" id="journey_date" name="journey_date" class="form-control" required>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col text-center">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="container mt-5" style="background-color: #85FFBD;
+background-image: linear-gradient(45deg, #85FFBD 0%, #FFFB7D 100%);border-radius:10px;
+">
+    <h3>Available Buses</h3>
+    <div id="busList" class="row g-3">
+        <!-- Bus items will be injected here -->
+    </div>
+    <div id="noBusMessage" class="text-center" style="display: none;">
+        <p>No buses found</p>
+    </div>
+</div>
+
+<style>
+    .carousel-item img {
+        width: 100%;
+        height: 500px;
+        object-fit: cover;
+    }
+
+    .carousel-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        color: white;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 20px;
+        border-radius: 10px;
+        background-color: transparent;
+    }
+
+    #busList {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .bus-card {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .bus-card .card {
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        border: none;
+        border-radius: 15px;
+        background-color: #f8f9fa;
+        box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .bus-card .card-body {
+        display: flex;
+        flex-direction: column;
+        align-items: start;
+        width: 100%;
+    }
+
+    .bus-card h5 {
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+
+    .route-details {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .fare-button {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .fare-button .fare {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    .fare-button button {
+        padding: 10px 20px;
+    }
+
+    #noBusMessage {
+        font-size: 1.2rem;
+        color: #ff0000;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        initialFetch();
+    });
+
+    function initialFetch() {
+        fetchBannerData();
+        fetchPlaceData();
+        fetchInitialBusList();
+    }
+
+    function fetchBannerData() {
+        fetch('{% url 'banner_carousel_api' %}')
+            .then(response => response.json())
+            .then(data => populateBanner(data))
+            .catch(error => console.error('Error loading the banner data:', error));
+    }
+
+    function fetchPlaceData() {
+        fetch('{% url 'place_list_api' %}')
+            .then(response => response.json())
+            .then(data => populatePlaces(data))
+            .catch(error => console.error('Error loading the places data:', error));
+    }
+
+    function fetchInitialBusList() {
+        fetch('{% url 'bus_list_api' %}')
+            .then(response => response.json())
+            .then(data => updateBusList(data))
+            .catch(error => console.error('Error loading the initial bus data:', error));
+    }
+
+    function searchBuses() {
+        const fromId = document.getElementById('from').value;
+        const toId = document.getElementById('to').value;
+        const journeyDate = document.getElementById('journey_date').value;
+
+        fetch(`{% url 'bus_list_api' %}?from=${fromId}&to=${toId}&journey_date=${journeyDate}`)
+            .then(response => response.json())
+            .then(data => updateBusList(data))
+            .catch(error => console.error('Error loading the bus data based on search:', error));
+    }
+
+    function populateBanner(data) {
+        const carouselInner = document.getElementById('carouselItems');
+        data.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'carousel-item' + (index === 0 ? ' active' : '');
+            div.innerHTML = `<img src="${item.banner_image}" class="d-block w-100" alt="${item.banner_title}"><div class="carousel-caption d-none d-md-block"><h5>${item.banner_title}</h5></div>`;
+            carouselInner.appendChild(div);
+        });
+    }
+
+    function populatePlaces(data) {
+        const fromSelect = document.getElementById('from');
+        const toSelect = document.getElementById('to');
+        data.forEach(place => {
+            const optionFrom = document.createElement('option');
+            optionFrom.value = place.place_id;
+            optionFrom.textContent = place.place_name;
+            fromSelect.appendChild(optionFrom);
+            const optionTo = document.createElement('option');
+            optionTo.value = place.place_id;
+            optionTo.textContent = place.place_name;
+            toSelect.appendChild(optionTo);
+        });
+    }
+
+    function updateBusList(data) {
+        const busList = document.getElementById('busList');
+        const noBusMessage = document.getElementById('noBusMessage');
+        busList.innerHTML = '';
+        if (data.message) {
+            noBusMessage.style.display = 'block';
+        } else {
+            noBusMessage.style.display = 'none';
+            data.forEach(bus => {
+                const busItem = document.createElement('div');
+                busItem.className = 'col-md-12 bus-card';
+                const busDetailUrl = `/buses/${bus.bus_id}/`;
+                busItem.innerHTML = `
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">${bus.bus_name}</h5>
+                        <div class="route-details">
+                            <p><strong>From:</strong> ${bus.source}</p>
+                            <p><strong>To:</strong> ${bus.destination}</p>
+                        </div>
+                        <div class="route-details">
+                            <p><strong>Departure:</strong> ${bus.starting_time}</p>
+                            <p><strong>Arrival:</strong> ${bus.arrival_time}</p>
+                        </div>
+                        <div class="fare-button">
+                            <span class="fare">₹${bus.fare}</span>
+                            <a href="${busDetailUrl}" class="btn btn-primary">Select seats</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+                busList.appendChild(busItem);
+            });
+        }
+    }
+</script>
+{% endblock %}
