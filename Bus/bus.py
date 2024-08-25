@@ -6,7 +6,7 @@ from django.db.models import Avg
 from django.utils import timezone
 from django.shortcuts import redirect
 from django.contrib import messages
-from .models import Bus, Rating, Booking, Payment
+from .models import Bus, Rating, Booking, Payment, Passenger
 from django.db.models import Prefetch
 
 
@@ -83,17 +83,34 @@ def book_bus(request, bus_id):
         user_id = request.session.get("user_id")
         if not user_id:
             return redirect("login")
+        
         bus = get_object_or_404(Bus, pk=bus_id)
-        seats = request.POST.get("seats", 1)
-        total_fare = bus.fare * int(seats)
+        seats = int(request.POST.get("seats", 1))
+        total_fare = bus.fare * seats
 
-        request.session["temp_booking"] = {
+        # Store booking details in session
+        temp_booking = {
             "bus_id": str(bus_id),
             "seats": seats,
             "total_fare": total_fare,
+            "passengers": []
         }
 
+        # Collect passenger details from the form
+        for i in range(1, seats + 1):
+            passenger = {
+                "name": request.POST.get(f"passenger_name_{i}"),
+                "age": request.POST.get(f"passenger_age_{i}"),
+                "gender": request.POST.get(f"passenger_gender_{i}"),
+            }
+            temp_booking["passengers"].append(passenger)
+
+        # Save the booking and passenger details to the session
+        request.session["temp_booking"] = temp_booking
+
+        # Redirect to the payment page
         return redirect("payment_page")
+
     return redirect("bus_detail", bus_id=bus_id)
 
 
@@ -160,6 +177,15 @@ def process_payment(request):
             arrival_time=bus.arrival_time,
         )
 
+        # Add passengers to the booking
+        for passenger_info in booking_details["passengers"]:
+            Passenger.objects.create(
+                booking=booking,
+                name=passenger_info["name"],
+                age=passenger_info["age"],
+                gender=passenger_info["gender"],
+            )
+
         # Process the payment
         Payment.objects.create(
             booking=booking,
@@ -172,6 +198,7 @@ def process_payment(request):
         # Set a session variable for the popup
         request.session["payment_success"] = True
         return redirect("home")
+    
     return redirect("payment_page")
 
 
@@ -185,13 +212,8 @@ def add_rating(request, booking_id):
         rating_value = request.POST.get("rating_value")
         review = request.POST.get("review")
         
-        print('booking>>>',booking)
-        print('rating_value>>',rating_value),
-        print('review>>> ',review)
 
-        # Check if the user has already rated this booking
         existing_rating = Rating.objects.filter(booking=booking).first()
-        print('existing_rating>>>',existing_rating)
 
         if existing_rating:
             existing_rating.rating_value = rating_value
@@ -209,6 +231,3 @@ def add_rating(request, booking_id):
 
         messages.success(request, "Thank you for your feedback!")
         return redirect("show_my_ticket")
-
-    # # Handle GET request if needed
-    # return render(request, "your_template.html", context={})

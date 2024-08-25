@@ -8,6 +8,7 @@ from .models import (
     Banner,
     Booking,
     Payment,
+    Passenger,
 )
 
 
@@ -81,3 +82,4 @@ admin.site.register(Rating, RatingAdmin)
 admin.site.register(Banner, BannerAdmin)
 admin.site.register(Booking, BookingAdmin)
 admin.site.register(Payment, PaymentAdmin)
+admin.site.register(Passenger)

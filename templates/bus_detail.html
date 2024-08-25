@@ -44,38 +44,105 @@ border: 1px solid #e0e0e0; padding: 20px; border-radius: 10px;">
         </div>
 
         <!-- Book Now button -->
-        <form method="post" action="{% url 'book_bus' bus.bus_id %}" style="text-align: right;">
+        <form id="bookingForm" method="post" action="{% url 'book_bus' bus.bus_id %}" style="text-align: right;">
             {% csrf_token %}
             <p style="margin: 0; display: flex; align-items: center; justify-content: flex-end;">
                 <strong style="margin-right: 10px;">Number of seats:</strong>
-                <input name="seats" value="1" class="form-control d-inline-block" style="width: auto; margin-right: 10px;">
-                <button type="submit" class="btn btn-primary">Book Now</button>
+                <input id="numSeats" name="seats" value="1" class="form-control d-inline-block" style="width: auto; margin-right: 10px;">
+                <button type="button" class="btn btn-primary" onclick="showPassengerDetailsModal()">Book Now</button>
             </p>
         </form>
     </div>
 </div>
 
+<!-- Modal for Passenger Details -->
+<div class="modal fade" id="passengerDetailsModal" tabindex="-1" aria-labelledby="passengerDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="passengerDetailsModalLabel">Enter Passenger Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="passengerDetailsForm">
+                    <div id="passengerDetailsContainer"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitBooking()">Submit Booking</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    document.getElementById('bookingForm').onsubmit = function (e) {
-        e.preventDefault();
-        var form = this;
-        fetch(form.action, {
-            method: 'POST',
-            body: new FormData(form),
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest' 
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
+    function showPassengerDetailsModal() {
+        const numSeats = document.getElementById('numSeats').value;
+        const container = document.getElementById('passengerDetailsContainer');
+        container.innerHTML = '';  // Clear previous content
+
+        for (let i = 1; i <= numSeats; i++) {
+            container.innerHTML += `
+                <div class="mb-3">
+                    <label for="passengerName${i}" class="form-label">Passenger ${i} Name</label>
+                    <input type="text" class="form-control" id="passengerName${i}" name="passenger_name_${i}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="passengerAge${i}" class="form-label">Passenger ${i} Age</label>
+                    <input type="number" class="form-control" id="passengerAge${i}" name="passenger_age_${i}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="passengerGender${i}" class="form-label">Passenger ${i} Gender</label>
+                    <select class="form-select" id="passengerGender${i}" name="passenger_gender_${i}" required>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="O">Other</option>
+                    </select>
+                </div>
+                <hr>
+            `;
+        }
+
+        var modal = new bootstrap.Modal(document.getElementById('passengerDetailsModal'));
+        modal.show();
+    }
+
+    function submitBooking() {
+    const form = document.getElementById('bookingForm');
+    const passengerForm = document.getElementById('passengerDetailsForm');
+
+    const formData = new FormData(form);
+    const passengerData = new FormData(passengerForm);
+
+    // Append passenger details to the main form data
+    passengerData.forEach((value, key) => {
+        formData.append(key, value);
+    });
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;  // Follow the redirect
+        } else {
+            return response.json();  // Try to parse as JSON
+        }
+    })
+    .then(data => {
+        if (data && data.message) {
             alert(data.message);  
-            if (data.success) {
-                window.location.href = "{% url 'home' %}";  
-            }
-        })
-        .catch(error => {
-            alert('Error occurred');
-        });
-    };
+        }
+    })
+    .catch(error => {
+        alert('Error occurred');
+        console.error('Error:', error);
+    });
+}
 </script>
 {% endblock %}
